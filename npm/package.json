@@ -1,0 +1,40 @@
+{
+  "name": "@policylayer/intercept",
+  "version": "0.0.0",
+  "description": "Policy-as-code enforcement for MCP tool calls",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PolicyLayer/Intercept.git",
+    "directory": "npm"
+  },
+  "homepage": "https://github.com/policylayer/intercept",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "policy",
+    "proxy",
+    "ai",
+    "security",
+    "guardrails"
+  ],
+  "bin": {
+    "intercept": "bin/intercept"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "bin/",
+    "install.js"
+  ]
+}

@@ -20,9 +20,21 @@ Intercept is a transparent proxy that sits between an AI agent and an MCP (Model
 
 ## Install
 
+**npm:**
+
+```sh
+npm install -g @policylayer/intercept
+```
+
+**Go:**
+
 ```sh
 go install github.com/policylayer/intercept@latest
 ```
+
+**Pre-built binaries:**
+
+Download from [GitHub Releases](https://github.com/policylayer/intercept/releases) and place the binary on your PATH.
 
 ## Quick start
 

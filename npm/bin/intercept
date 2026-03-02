@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BINARY="$SCRIPT_DIR/intercept"
+
+if [ "$(uname -o 2>/dev/null)" = "Msys" ] || [ "$(uname -o 2>/dev/null)" = "Cygwin" ]; then
+  BINARY="$SCRIPT_DIR/intercept.exe"
+fi
+
+if [ ! -f "$BINARY" ] || [ "$BINARY" = "$0" ]; then
+  echo "Error: intercept binary not found. Run 'npm install' or 'node install.js' first." >&2
+  exit 1
+fi
+
+exec "$BINARY" "$@"
