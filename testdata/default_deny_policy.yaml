@@ -1,0 +1,24 @@
+version: "1"
+description: "Default-deny test fixture"
+default: deny
+
+tools:
+  read_file:
+    rules: []
+
+  create_issue:
+    rules:
+      - name: "hourly issue limit"
+        rate_limit: 5/hour
+        on_deny: "Hourly limit of 5 new issues reached"
+
+  delete_customer:
+    rules:
+      - name: "block destructive action"
+        action: "deny"
+        on_deny: "Customer deletion is not permitted"
+
+  "*":
+    rules:
+      - name: "global rate limit"
+        rate_limit: 60/minute

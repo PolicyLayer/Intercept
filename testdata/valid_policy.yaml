@@ -1,0 +1,73 @@
+version: "1"
+description: "Stripe MCP server policies"
+
+tools:
+  create_charge:
+    rules:
+      - name: "max single charge"
+        conditions:
+          - path: "args.amount"
+            op: "lte"
+            value: 50000
+        on_deny: "Single charge cannot exceed $500.00"
+
+      - name: "daily spend cap"
+        conditions:
+          - path: "state.create_charge.daily_spend"
+            op: "lt"
+            value: 1000000
+        on_deny: "Daily spending cap of $10,000.00 reached"
+        state:
+          counter: "daily_spend"
+          window: "day"
+          increment_from: "args.amount"
+
+      - name: "allowed currencies"
+        conditions:
+          - path: "args.currency"
+            op: "in"
+            value: ["usd", "eur"]
+        on_deny: "Only USD and EUR charges are permitted"
+
+  create_issue:
+    rules:
+      - name: "hourly issue limit"
+        rate_limit: 5/hour
+        on_deny: "Hourly limit of 5 new issues reached"
+
+  create_refund:
+    rules:
+      - name: "refund limit"
+        conditions:
+          - path: "args.amount"
+            op: "lte"
+            value: 10000
+        on_deny: "Refunds over $100.00 require manual processing"
+
+      - name: "daily refund count"
+        conditions:
+          - path: "state.create_refund.daily_count"
+            op: "lt"
+            value: 10
+        on_deny: "Daily refund limit (10) reached"
+        state:
+          counter: "daily_count"
+          window: "day"
+
+  delete_customer:
+    rules:
+      - name: "block destructive action"
+        action: "deny"
+        on_deny: "Customer deletion is not permitted via AI agents"
+
+  "*":
+    rules:
+      - name: "global rate limit"
+        conditions:
+          - path: "state._global.calls_per_minute"
+            op: "lt"
+            value: 60
+        on_deny: "Rate limit: maximum 60 tool calls per minute"
+        state:
+          counter: "calls_per_minute"
+          window: "minute"

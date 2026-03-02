@@ -1,0 +1,9 @@
+version: "1"
+tools:
+  broken_tool:
+    rules:
+      - name: "unclosed list
+        conditions:
+          - path: "args.x"
+            op: "eq"
+            value: [1, 2, 3

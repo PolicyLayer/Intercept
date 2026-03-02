@@ -1,0 +1,72 @@
+version: "2"
+
+tools:
+  some_tool:
+    rules:
+      - name: ""
+        conditions:
+          - path: "args.x"
+            op: "unknown_op"
+            value: 1
+
+      - name: "bad path prefix"
+        conditions:
+          - path: "foo.bar"
+            op: "eq"
+            value: "test"
+
+      - name: "in needs list"
+        conditions:
+          - path: "args.items"
+            op: "in"
+            value: "not_a_list"
+
+      - name: "lt needs number"
+        conditions:
+          - path: "args.count"
+            op: "lt"
+            value: "not_a_number"
+
+      - name: "bad regex"
+        conditions:
+          - path: "args.email"
+            op: "regex"
+            value: "[invalid("
+
+      - name: "deny with conditions"
+        action: "deny"
+        conditions:
+          - path: "args.x"
+            op: "eq"
+            value: 1
+
+      - name: "evaluate without conditions"
+        action: "evaluate"
+
+  rate_limit_tool:
+    rules:
+      - name: "bad format"
+        rate_limit: "five/hour"
+
+      - name: "conflict with conditions"
+        rate_limit: "5/hour"
+        conditions:
+          - path: "args.x"
+            op: "eq"
+            value: 1
+
+      - name: "conflict with state"
+        rate_limit: "5/hour"
+        state:
+          counter: "my_counter"
+          window: "hour"
+
+      - name: "zero count"
+        rate_limit: "0/hour"
+
+      - name: "bad window"
+        rate_limit: "5/week"
+
+      - name: "deny with rate_limit"
+        action: "deny"
+        rate_limit: "5/hour"
