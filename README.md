@@ -20,6 +20,12 @@ Intercept is a transparent proxy that sits between an AI agent and an MCP (Model
 
 ## Install
 
+npx:
+
+```sh
+npx -y @policylayer/intercept -c policy.yaml -- npx -y @modelcontextprotocol/server-github
+```
+
 **npm:**
 
 ```sh
