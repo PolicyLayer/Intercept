@@ -108,6 +108,26 @@
       padding: 5px 15px;
     }
 
+    .menu-toggle {
+      display: none;
+    }
+
+    .menu-btn {
+      display: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 5px;
+    }
+
+    .menu-btn span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--black);
+      margin: 5px 0;
+    }
+
     /* ─── HERO ─── */
 
     .hero {
@@ -229,7 +249,8 @@
       margin-top: 16px;
       overflow-x: hidden;
       white-space: pre-wrap;
-      word-break: break-all;
+      overflow-wrap: break-word;
+      word-break: normal;
     }
 
     /* ─── SECTION (generic padded section) ─── */
@@ -355,7 +376,8 @@
       padding: 14px 16px;
       overflow-x: hidden;
       white-space: pre-wrap;
-      word-break: break-all;
+      overflow-wrap: break-word;
+      word-break: normal;
     }
 
     /* ─── ASCII DIAGRAM ─── */
@@ -562,6 +584,7 @@
       h1 {
         font-size: clamp(2.8rem, 10vw, 4.5rem);
         letter-spacing: -2px;
+        line-height: 0.95;
       }
 
       .hero-flex,
@@ -612,6 +635,65 @@
         border-bottom: 2px solid var(--black);
       }
 
+      .menu-btn {
+        display: block;
+      }
+
+      header nav {
+        display: none;
+        width: 100%;
+        border-top: 2px solid var(--black);
+        margin-top: 20px;
+        padding-top: 15px;
+      }
+
+      header nav a {
+        display: block;
+        margin: 0;
+        padding: 12px 0;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 0.8rem;
+      }
+
+      header nav a:last-child {
+        border-bottom: none;
+      }
+
+      header nav .nav-bordered {
+        border: none;
+        padding: 12px 0;
+      }
+
+      header {
+        flex-wrap: wrap;
+      }
+
+      .menu-toggle:checked ~ nav {
+        display: block;
+      }
+
+      .menu-toggle:checked ~ .menu-btn span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+      }
+
+      .menu-toggle:checked ~ .menu-btn span:nth-child(2) {
+        opacity: 0;
+      }
+
+      .menu-toggle:checked ~ .menu-btn span:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
+      }
+
+      .btn {
+        display: block;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      .btn-outline {
+        margin-left: 0;
+      }
+
       .hero-code {
         margin-left: -25px;
         margin-right: -25px;
@@ -620,10 +702,7 @@
       }
 
       .qs-item pre {
-        margin-left: -40px;
-        margin-right: -40px;
-        border-left: none;
-        border-right: none;
+        margin: 0;
       }
 
       .int-grid {
@@ -642,8 +721,7 @@
       }
 
       .int-card pre {
-        border-left: none;
-        border-right: none;
+        margin: 0;
       }
 
       .section {
@@ -659,7 +737,8 @@
       .install-section pre {
         font-size: 0.65rem;
         white-space: pre-wrap;
-        word-break: break-all;
+        overflow-wrap: break-word;
+        word-break: normal;
         overflow-x: hidden;
       }
 
@@ -677,15 +756,10 @@
         display: none;
       }
 
-      .spec-table {
-        margin-left: -25px;
-        margin-right: -25px;
-      }
-
       .spec-table tr {
         border: none;
         border-bottom: 2px solid var(--black);
-        padding: 20px 25px;
+        padding: 20px 0;
       }
 
       .spec-table tr:last-child {
@@ -706,12 +780,6 @@
         font-weight: bold;
       }
 
-      .spec-table pre {
-        width: 100%;
-        border-left: none;
-        border-right: none;
-      }
-
       .install-section pre {
         padding: 14px 16px;
         text-align: left;
@@ -719,13 +787,21 @@
 
       footer {
         flex-direction: column;
-        gap: 10px;
+        gap: 0;
         text-align: center;
+        padding: 25px;
+      }
+
+      footer > div:first-child {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
       }
 
       footer a {
-        margin-left: 0;
-        margin: 0 10px;
+        margin: 0;
+        display: inline-block;
+        padding: 5px 12px;
       }
     }
 
@@ -763,6 +839,12 @@
 
   <header>
     <div class="logo">INTERCEPT</div>
+    <input type="checkbox" id="menu-toggle" class="menu-toggle">
+    <label for="menu-toggle" class="menu-btn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
     <nav>
       <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy</a>
       <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">Usage</a>
@@ -779,7 +861,6 @@
       <div>
         <h1>Intercept<br>Every<br>Tool Call.</h1>
         <p>PolicyLayer Intercept is a transparent proxy between your AI agent and its MCP server. Define policies in YAML. Every tool call is evaluated, logged, and enforced before it reaches upstream.</p>
-        <div style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; color: #666;">Open Source &middot; Apache 2.0</div>
         <a href="#install" class="btn">Install</a>
         <a href="https://github.com/policylayer/intercept" class="btn btn-outline">Read the docs</a>
       </div>
@@ -1093,7 +1174,7 @@ go install github.com/policylayer/intercept@latest</pre>
       <a href="https://github.com/policylayer/intercept">GitHub</a>
       <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy Docs</a>
       <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">CLI Reference</a>
-      <a href="https://x.com/policylayer">X</a>
+      <a href="https://x.com/policylayer">@PolicyLayer</a>
     </div>
   </footer>
 
