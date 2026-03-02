@@ -17,6 +17,10 @@ var (
 // main initialises the version string and delegates to the Cobra command tree.
 func main() {
 	cmd.SetVersion(version, commit)
+	if len(os.Args) == 1 {
+		cmd.PrintHelp()
+		return
+	}
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}

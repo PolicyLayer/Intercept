@@ -103,6 +103,11 @@ func SetVersion(version, commit string) {
 	rootCmd.Version = version + " (" + commit + ")"
 }
 
+// PrintHelp prints the root command's help text.
+func PrintHelp() {
+	rootCmd.Help()
+}
+
 // Execute runs the root command. It is the single entry point called by main.
 func Execute() error {
 	return rootCmd.Execute()
