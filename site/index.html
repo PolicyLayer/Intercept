@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intercept — Policy enforcement for MCP agents</title>
+  <meta name="description" content="Intercept is a transparent proxy that enforces YAML-defined policies on every MCP tool call. Rate limits, spend caps, access control. Deterministic. No code changes.">
+  <meta property="og:title" content="Intercept — Policy enforcement for MCP agents">
+  <meta property="og:description" content="A transparent proxy that enforces YAML-defined policies on every MCP tool call. Rate limits, spend caps, access control. Deterministic. No code changes.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://intercept.policylayer.com">
+  <meta property="og:image" content="https://intercept.policylayer.com/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intercept.policylayer.com/og.png">
+  <meta name="twitter:site" content="@policylayer">
+  <meta name="twitter:title" content="Intercept — Policy enforcement for MCP agents">
+  <meta name="twitter:description" content="A transparent proxy that enforces YAML-defined policies on every MCP tool call. Rate limits, spend caps, access control. Deterministic.">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NJ18SRL3D6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NJ18SRL3D6');
+  </script>
+  <style>
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --grid-line: #d1d1d1;
+      --accent: #f9f9f9;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--white);
+      color: var(--black);
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -1;
+      opacity: 0.3;
+    }
+
+    a {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      border: 2px solid var(--black);
+      background: var(--white);
+    }
+
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      background: #f0f0f0;
+      padding: 2px 5px;
+    }
+
+    /* ─── HEADER ─── */
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 2px solid var(--black);
+    }
+
+    .logo {
+      font-weight: 900;
+      letter-spacing: -1px;
+      font-size: 1.2rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--black);
+      margin-left: 20px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    nav .nav-bordered {
+      border: 2px solid var(--black);
+      padding: 5px 15px;
+    }
+
+    /* ─── HERO ─── */
+
+    .hero {
+      padding: 80px 40px;
+      border-bottom: 2px solid var(--black);
+    }
+
+    .hero-subtitle {
+      font-weight: 900;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 8vw, 6rem);
+      line-height: 0.85;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+      letter-spacing: -4px;
+      font-weight: 900;
+    }
+
+    .hero-flex {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .hero-flex p {
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: var(--black);
+      color: var(--white);
+      padding: 18px 40px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--black);
+      border: 2px solid var(--black);
+      margin-left: 10px;
+    }
+
+    .hero-code {
+      border: 2px solid var(--black);
+      padding: 20px;
+      background: var(--accent);
+    }
+
+    .hero-code h3 {
+      margin-bottom: 10px;
+      font-weight: 900;
+    }
+
+    .hero-code pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ─── GRID-3 ─── */
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      border-bottom: 2px solid var(--black);
+    }
+
+    .grid-item {
+      padding: 40px;
+      border-right: 2px solid var(--black);
+    }
+
+    .grid-item:last-child {
+      border-right: none;
+    }
+
+    .grid-item h3 {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+      color: #666;
+    }
+
+    .grid-item h2 {
+      text-transform: uppercase;
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      letter-spacing: -1px;
+      font-weight: 900;
+    }
+
+    .grid-item p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .grid-pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      line-height: 1.6;
+      background: var(--accent);
+      color: var(--black);
+      border: 2px solid var(--black);
+      padding: 12px 14px;
+      margin-top: 16px;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ─── SECTION (generic padded section) ─── */
+
+    .section {
+      padding: 60px 40px;
+      border-bottom: 2px solid var(--black);
+    }
+
+    .section h2 {
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: -1px;
+      font-weight: 900;
+      font-size: 1.8rem;
+    }
+
+    .section .subtitle {
+      color: #666;
+      font-size: 0.95rem;
+      margin-bottom: 30px;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    /* ─── SPEC TABLE ─── */
+
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .spec-table th,
+    .spec-table td {
+      text-align: left;
+      padding: 20px;
+      border: 1px solid var(--black);
+      font-size: 0.9rem;
+      vertical-align: top;
+    }
+
+    .spec-table th {
+      background: var(--accent);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+
+    .spec-table pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      background: var(--accent);
+      color: var(--black);
+      border: 2px solid var(--black);
+      padding: 12px 16px;
+      overflow-x: auto;
+      white-space: pre;
+      margin: 0;
+    }
+
+    .spec-table code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      background: #f0f0f0;
+      padding: 2px 5px;
+    }
+
+    /* ─── QUICK START GRID ─── */
+
+    .qs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .qs-item {
+      padding: 40px;
+      border-right: 2px solid var(--black);
+      border-top: 2px solid var(--black);
+    }
+
+    .qs-item:last-child {
+      border-right: none;
+    }
+
+    .qs-item h3 {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      color: #666;
+    }
+
+    .qs-item h2 {
+      text-transform: uppercase;
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+      font-weight: 900;
+    }
+
+    .qs-item p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      color: #333;
+    }
+
+    .qs-item pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      background: var(--accent);
+      color: var(--black);
+      border: 2px solid var(--black);
+      padding: 14px 16px;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ─── ASCII DIAGRAM ─── */
+
+    .ascii-diagram {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      background: var(--accent);
+      color: var(--black);
+      padding: 30px 40px;
+      border: 2px solid var(--black);
+      white-space: pre;
+      overflow-x: auto;
+      display: inline-block;
+    }
+
+    /* ─── STEPS GRID ─── */
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 2px solid var(--black);
+      margin-top: 30px;
+    }
+
+    .step-item {
+      padding: 25px 20px;
+      border-right: 2px solid var(--black);
+    }
+
+    .step-item:last-child {
+      border-right: none;
+    }
+
+    .step-item h3 {
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .step-item .step-title {
+      font-weight: 900;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .step-item p {
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* ─── INTEGRATION GRID ─── */
+
+    .int-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 2px solid var(--black);
+    }
+
+    .int-card {
+      padding: 30px;
+      border-right: 2px solid var(--black);
+    }
+
+    .int-card:last-child {
+      border-right: none;
+    }
+
+    .int-card h3 {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      color: #666;
+    }
+
+    .int-card p {
+      font-size: 0.85rem;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .int-card pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      line-height: 1.55;
+      background: var(--accent);
+      color: var(--black);
+      border: 2px solid var(--black);
+      padding: 16px;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ─── FAQ ─── */
+
+    .faq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .faq-box {
+      padding: 40px;
+      border-right: 2px solid var(--black);
+      border-bottom: 2px solid var(--black);
+    }
+
+    .faq-box:nth-child(even) {
+      border-right: none;
+    }
+
+    .faq-box:nth-last-child(-n+2) {
+      border-bottom: none;
+    }
+
+    .faq-q {
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+
+    .faq-box p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* ─── INSTALL ─── */
+
+    .install-section {
+      padding: 60px 40px;
+      background: #111;
+      color: var(--white);
+      text-align: center;
+      border-bottom: 2px solid var(--black);
+    }
+
+    .install-section h2 {
+      text-transform: uppercase;
+      font-weight: 900;
+      font-size: 1.8rem;
+      letter-spacing: -1px;
+      margin-bottom: 25px;
+    }
+
+    .install-section pre {
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      background: var(--black);
+      border: 1px solid #333;
+      padding: 16px 32px;
+      color: var(--white);
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+
+    .install-section p {
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    .install-section code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      background: transparent;
+      color: #ccc;
+    }
+
+    /* ─── FOOTER ─── */
+
+    footer {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    footer a {
+      color: var(--black);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      margin-left: 20px;
+    }
+
+    /* ─── RESPONSIVE ─── */
+
+    @media (max-width: 900px) {
+      body {
+        padding: 10px;
+      }
+
+      .hero {
+        padding: 50px 25px;
+      }
+
+      h1 {
+        font-size: clamp(2.8rem, 10vw, 4.5rem);
+        letter-spacing: -2px;
+      }
+
+      .hero-flex,
+      .grid-3,
+      .qs-grid,
+      .int-grid,
+      .faq-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-item,
+      .qs-item,
+      .int-card,
+      .faq-box {
+        border-right: none;
+        border-bottom: 2px solid var(--black);
+      }
+
+      .grid-item:last-child,
+      .qs-item:last-child,
+      .int-card:last-child {
+        border-bottom: none;
+      }
+
+      .faq-box:nth-child(even) {
+        border-right: none;
+      }
+
+      .faq-box:last-child {
+        border-bottom: none;
+      }
+
+      .steps-grid {
+        grid-template-columns: 1fr 1fr;
+        margin-left: -25px;
+        margin-right: -25px;
+        margin-bottom: -40px;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .step-item:nth-child(2) {
+        border-right: none;
+      }
+
+      .step-item:nth-child(-n+2) {
+        border-bottom: 2px solid var(--black);
+      }
+
+      .hero-code {
+        margin-left: -25px;
+        margin-right: -25px;
+        border-left: none;
+        border-right: none;
+      }
+
+      .qs-item pre {
+        margin-left: -40px;
+        margin-right: -40px;
+        border-left: none;
+        border-right: none;
+      }
+
+      .int-grid {
+        border: none;
+        border-top: 2px solid var(--black);
+      }
+
+      .int-card {
+        padding: 25px 0;
+        border-right: none;
+        border-bottom: 2px solid var(--black);
+      }
+
+      .int-card:last-child {
+        border-bottom: none;
+      }
+
+      .int-card pre {
+        border-left: none;
+        border-right: none;
+      }
+
+      .section {
+        padding: 40px 25px;
+      }
+
+      /* All code blocks: prevent overflow on mobile */
+      pre,
+      .hero-code pre,
+      .spec-table pre,
+      .qs-item pre,
+      .int-card pre,
+      .install-section pre {
+        font-size: 0.65rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        overflow-x: hidden;
+      }
+
+      .spec-table,
+      .spec-table thead,
+      .spec-table tbody,
+      .spec-table tr,
+      .spec-table th,
+      .spec-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .spec-table thead {
+        display: none;
+      }
+
+      .spec-table {
+        margin-left: -25px;
+        margin-right: -25px;
+      }
+
+      .spec-table tr {
+        border: none;
+        border-bottom: 2px solid var(--black);
+        padding: 20px 25px;
+      }
+
+      .spec-table tr:last-child {
+        border-bottom: none;
+      }
+
+      .spec-table td {
+        border: none;
+        padding: 0;
+        margin-bottom: 10px;
+      }
+
+      .spec-table td:last-child {
+        margin-bottom: 0;
+      }
+
+      .spec-table td code {
+        font-weight: bold;
+      }
+
+      .spec-table pre {
+        width: 100%;
+        border-left: none;
+        border-right: none;
+      }
+
+      .install-section pre {
+        padding: 14px 16px;
+        text-align: left;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+
+      footer a {
+        margin-left: 0;
+        margin: 0 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 2.5rem;
+        letter-spacing: -1.5px;
+      }
+
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .step-item {
+        border-right: none;
+        border-bottom: 2px solid var(--black);
+      }
+
+      .step-item:last-child {
+        border-bottom: none;
+      }
+
+      .ascii-diagram {
+        font-size: 0.6rem;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── HEADER ─── -->
+
+  <header>
+    <div class="logo">INTERCEPT</div>
+    <nav>
+      <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">Usage</a>
+      <a href="https://github.com/policylayer/intercept">GitHub</a>
+      <a href="#install" class="nav-bordered">Install</a>
+    </nav>
+  </header>
+
+  <!-- ─── HERO ─── -->
+
+  <div class="hero">
+    <div class="hero-subtitle">Policy enforcement for MCP agents</div>
+    <div class="hero-flex">
+      <div>
+        <h1>Intercept<br>Every<br>Tool Call.</h1>
+        <p>PolicyLayer Intercept is a transparent proxy between your AI agent and its MCP server. Define policies in YAML. Every tool call is evaluated, logged, and enforced before it reaches upstream.</p>
+        <div style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; color: #666;">Open Source &middot; Apache 2.0</div>
+        <a href="#install" class="btn">Install</a>
+        <a href="https://github.com/policylayer/intercept" class="btn btn-outline">Read the docs</a>
+      </div>
+      <div class="hero-code">
+        <h3>Enforcement Log</h3>
+        <pre>$ intercept -c policy.yaml \
+  -- npx -y server-github
+
+# Agent calls delete_repository...
+
+<b>[INTERCEPT POLICY DENIED]</b>
+Repository deletion is not
+permitted via AI agents
+
+# Agent calls create_issue (6th)...
+
+<b>[INTERCEPT POLICY DENIED]</b>
+Hourly limit of 5 new issues
+reached</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── WHY / HOW / WHAT ─── -->
+
+  <div class="grid-3">
+    <div class="grid-item">
+      <h3>01 / The Problem</h3>
+      <h2>No Guardrails</h2>
+      <p>Agents call tools with no spending limits, no rate limits, no access control. Prompt-based safety is probabilistic&mdash;it works until it doesn't. There is no hard stop.</p>
+    </div>
+    <div class="grid-item">
+      <h3>02 / The Mechanism</h3>
+      <h2>Block at the Wire</h2>
+      <p>Transparent proxy at the MCP transport layer. YAML policies evaluated deterministically on every call. Stateful evaluation with sliding-window counters. Blocked before it reaches upstream.</p>
+    </div>
+    <div class="grid-item">
+      <h3>03 / The Outcome</h3>
+      <h2>Full Enforcement</h2>
+      <p>Rate limits, spend caps, argument validation, unconditional blocks. The agent cannot reason around it&mdash;enforcement is below the model layer.</p>
+    </div>
+  </div>
+
+  <!-- ─── POLICY EXAMPLES ─── -->
+
+  <div class="section">
+    <div class="section-label">Policy Examples</div>
+    <h2>Real Policies, Real Enforcement</h2>
+    <p class="subtitle">From the <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md" style="text-decoration: underline; text-underline-offset: 2px;">policy reference</a>. Every snippet runs as-is.</p>
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th style="width: 15%;">Server</th>
+          <th style="width: 20%;">Rule</th>
+          <th>Policy YAML</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>GitHub</code></td>
+          <td>Block repo deletion</td>
+          <td><pre>delete_repository:
+  rules:
+    - name: "block repo deletion"
+      action: "deny"
+      on_deny: "Repo deletion not permitted"</pre></td>
+        </tr>
+        <tr>
+          <td><code>GitHub</code></td>
+          <td>Rate-limit issue creation</td>
+          <td><pre>create_issue:
+  rules:
+    - name: "hourly issue limit"
+      rate_limit: 5/hour
+      on_deny: "Hourly limit of 5 new issues reached"</pre></td>
+        </tr>
+        <tr>
+          <td><code>Stripe</code></td>
+          <td>Daily spend cap ($10k)</td>
+          <td><pre>create_charge:
+  rules:
+    - name: "daily spend cap"
+      conditions:
+        - path: "state.create_charge.daily_spend"
+          op: "lt"
+          value: 1000000
+      on_deny: "Daily spending cap of $10,000.00 reached"
+      state:
+        counter: "daily_spend"
+        window: "day"
+        increment_from: "args.amount"</pre></td>
+        </tr>
+        <tr>
+          <td><code>Stripe</code></td>
+          <td>Max single charge ($500)</td>
+          <td><pre>create_charge:
+  rules:
+    - name: "max single charge"
+      conditions:
+        - path: "args.amount"
+          op: "lte"
+          value: 50000
+      on_deny: "Single charge cannot exceed $500.00"</pre></td>
+        </tr>
+        <tr>
+          <td><code>Any</code></td>
+          <td>Global rate limit</td>
+          <td><pre>"*":
+  rules:
+    - name: "global rate limit"
+      rate_limit: 60/minute</pre></td>
+        </tr>
+        <tr>
+          <td><code>Any</code></td>
+          <td>Allowlist mode</td>
+          <td><pre>version: "1"
+default: deny    # only listed tools are permitted
+
+tools:
+  read_file:
+    rules: []    # allowed, no additional checks
+  create_issue:
+    rules:
+      - name: "hourly limit"
+        rate_limit: 5/hour</pre></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ─── QUICK START ─── -->
+
+  <div class="section" style="padding-bottom: 0;">
+    <div class="section-label">Quick Start</div>
+    <h2>Three Commands to Enforcement</h2>
+    <p class="subtitle">Scan discovers your tools. You write the rules. Intercept enforces them.</p>
+  </div>
+  <div class="qs-grid" style="border-bottom: 2px solid var(--black);">
+    <div class="qs-item">
+      <h3>01 / Scan</h3>
+      <h2>Discover</h2>
+      <p>Connect to any MCP server and generate a policy scaffold. Every tool is listed with its parameters as comments.</p>
+      <pre>intercept scan -o policy.yaml \
+  -- npx -y server-github</pre>
+    </div>
+    <div class="qs-item">
+      <h3>02 / Edit</h3>
+      <h2>Define</h2>
+      <p>Add rules to the generated YAML. Rate limits, spend caps, unconditional blocks. The scaffold shows you what's available.</p>
+      <pre>delete_repository:
+  rules:
+    - name: "block deletion"
+      action: "deny"
+      on_deny: "Not permitted"</pre>
+    </div>
+    <div class="qs-item">
+      <h3>03 / Run</h3>
+      <h2>Enforce</h2>
+      <p>Start the proxy. It launches the upstream server, proxies all MCP traffic, and enforces your policy on every tool call.</p>
+      <pre>intercept -c policy.yaml \
+  -- npx -y server-github</pre>
+    </div>
+  </div>
+
+  <!-- ─── HOW IT WORKS ─── -->
+
+  <div class="section" style="text-align: center;">
+    <div class="section-label">Architecture</div>
+    <h2>How It Works</h2>
+    <p class="subtitle">One proxy. Every tool call evaluated before reaching upstream.</p>
+    <div class="steps-grid">
+      <div class="step-item">
+        <h3>01</h3>
+        <div class="step-title">Intercept</div>
+        <p>Agent sends a tool call. Intercept captures it at the MCP transport layer before it reaches the server.</p>
+      </div>
+      <div class="step-item">
+        <h3>02</h3>
+        <div class="step-title">Evaluate</div>
+        <p>Policy engine checks the call against YAML-defined rules, conditions, and stateful counters.</p>
+      </div>
+      <div class="step-item">
+        <h3>03</h3>
+        <div class="step-title">Decide</div>
+        <p>Allow: forward to upstream server. Deny: return the reason to the agent. No ambiguity.</p>
+      </div>
+      <div class="step-item">
+        <h3>04</h3>
+        <div class="step-title">Track</div>
+        <p>Update counters, log the decision. If upstream fails, roll back the increment automatically.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── BUILT FOR PRODUCTION ─── -->
+
+  <div class="section" style="padding-bottom: 0;">
+    <div class="section-label">Infrastructure</div>
+    <h2>Built for Production</h2>
+  </div>
+  <div class="grid-3">
+    <div class="grid-item">
+      <h3>State Backends</h3>
+      <h2>SQLite + Redis</h2>
+      <p>SQLite by default&mdash;zero config, works out of the box. Redis for shared state across multiple Intercept instances. Key prefixing for namespace isolation.</p>
+    </div>
+    <div class="grid-item">
+      <h3>Event Logging</h3>
+      <h2>Structured Audit Trail</h2>
+      <p>Every decision logged as newline-delimited JSON. Tool name, result, rule name. Arguments SHA-256 hashed for privacy. 7-day default retention.</p>
+    </div>
+    <div class="grid-item">
+      <h3>Hot Reload</h3>
+      <h2>Edit Without Restart</h2>
+      <p>Intercept watches the policy file. Save and new rules take effect immediately. Invalid config is rejected&mdash;previous rules stay active. Counters are never reset.</p>
+    </div>
+  </div>
+
+  <!-- ─── INTEGRATION ─── -->
+
+  <div class="section" style="padding-bottom: 30px;">
+    <div class="section-label">Integration</div>
+    <h2>Drop Into Any MCP Client</h2>
+    <p class="subtitle">Point your <code>.mcp.json</code> at Intercept instead of the server. Works with Claude Code, Claude Desktop, or any MCP client.</p>
+    <div class="int-grid">
+      <div class="int-card">
+        <h3>Local Server (stdio)</h3>
+        <p>Intercept launches the server as a child process and proxies stdin/stdout.</p>
+        <pre>{
+  "mcpServers": {
+    "github": {
+      "command": "intercept",
+      "args": [
+        "-c", "policy.yaml",
+        "--",
+        "npx", "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "..."
+      }
+    }
+  }
+}</pre>
+      </div>
+      <div class="int-card">
+        <h3>Remote Server (--upstream)</h3>
+        <p>Intercept bridges stdio to HTTP. The agent spawns Intercept; Intercept talks to the remote server.</p>
+        <pre>{
+  "mcpServers": {
+    "stripe": {
+      "command": "intercept",
+      "args": [
+        "-c", "policy.yaml",
+        "--upstream",
+        "https://mcp.stripe.com",
+        "--header",
+        "Authorization: Bearer tok"
+      ]
+    }
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── FAQ ─── -->
+
+  <div class="faq-grid" style="border-bottom: 2px solid var(--black);">
+    <div class="faq-box">
+      <div class="faq-q">"Why not prompt guardrails?"</div>
+      <p>Prompts are probabilistic. The model can ignore, misinterpret, or be injected past them. Intercept is deterministic&mdash;the tool call is physically blocked at the wire before it reaches the server.</p>
+    </div>
+    <div class="faq-box">
+      <div class="faq-q">"What if the state backend is down?"</div>
+      <p>Fail-closed by default. Tool calls requiring state evaluation are denied until the backend recovers. Configurable with <code>--state-fail-mode open</code> for non-critical setups.</p>
+    </div>
+    <div class="faq-box">
+      <div class="faq-q">"Does the agent know?"</div>
+      <p>Intercept is fully transparent. The agent sees the same tools, same names, same behaviour. It only becomes aware when a policy denies a call&mdash;it receives a denial message explaining why.</p>
+    </div>
+    <div class="faq-box">
+      <div class="faq-q">"Can I update policies live?"</div>
+      <p>Yes. Intercept watches the policy file and hot-reloads on save. New rules take effect immediately. Invalid config is rejected; previous config stays active. Counters are never reset.</p>
+    </div>
+    <div class="faq-box">
+      <div class="faq-q">"What about allowlist mode?"</div>
+      <p>Set <code>default: deny</code> at the top of your policy. Only tools explicitly listed are permitted&mdash;everything else is rejected before rules are even evaluated.</p>
+    </div>
+    <div class="faq-box">
+      <div class="faq-q">"What transports are supported?"</div>
+      <p>Stdio with child process, stdio bridged to a remote HTTP server (<code>--upstream</code>), and HTTP/SSE. Transport is auto-detected from flags. See the <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md" style="text-decoration: underline; text-underline-offset: 2px;">CLI reference</a>.</p>
+    </div>
+  </div>
+
+  <!-- ─── INSTALL ─── -->
+
+  <div class="install-section" id="install">
+    <div class="section-label" style="color: #666;">Get Started</div>
+    <h2>Install Intercept</h2>
+    <pre>npm install -g @policylayer/intercept
+go install github.com/policylayer/intercept@latest</pre>
+    <p>Then: <code>intercept scan -o policy.yaml -- npx -y @modelcontextprotocol/server-github</code></p>
+  </div>
+
+  <!-- ─── FOOTER ─── -->
+
+  <footer>
+    <div>Apache 2.0 Licence &middot; Built by <a href="https://policylayer.com" style="margin-left: 0;">PolicyLayer</a></div>
+    <div>
+      <a href="https://github.com/policylayer/intercept">GitHub</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy Docs</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">CLI Reference</a>
+      <a href="https://x.com/policylayer">X</a>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>

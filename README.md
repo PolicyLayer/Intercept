@@ -116,4 +116,4 @@ For remote HTTP servers, use `--upstream` instead of a command:
 
 ## License
 
-[MIT](LICENSE)
+[Apache 2.0](LICENSE)
