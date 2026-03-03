@@ -40,6 +40,20 @@ func (h *Handler) SetConfig(cfg *config.Config) {
 	h.cfg.Store(cfg)
 }
 
+// ToolListFilter returns a ToolListFilter that removes hidden tools from
+// tools/list responses. The returned closure is a no-op when no tools are
+// hidden. It reads the atomic config pointer on each invocation, so
+// hot-reload works automatically.
+func (h *Handler) ToolListFilter() transport.ToolListFilter {
+	return func(body json.RawMessage) json.RawMessage {
+		hidden := h.engine.HiddenTools()
+		if hidden == nil {
+			return body
+		}
+		return filterToolsList(body, hidden)
+	}
+}
+
 // Handle evaluates a tools/call request and returns a ToolCallResult.
 func (h *Handler) Handle(req transport.ToolCallRequest) transport.ToolCallResult {
 	cfg := h.cfg.Load()

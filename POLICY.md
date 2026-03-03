@@ -28,9 +28,36 @@ tools:
 | `version` | yes | Must be `"1"` |
 | `description` | no | Human-readable description of the policy |
 | `default` | no | Default posture: `"allow"` (default) or `"deny"` |
+| `hide` | no | List of tool names to hide from the agent (removed from `tools/list`, denied on `tools/call`) |
 | `tools` | yes | Map of tool names to their rule definitions |
 
 Tool name keys must match the exact tool names exposed by the MCP server. The special key `"*"` defines wildcard rules that apply to every tool call.
+
+## Hiding tools
+
+The `hide` list removes tools entirely from the agent's view. Hidden tools are stripped from `tools/list` responses so the agent never sees them, and any `tools/call` attempt is denied as a safety net.
+
+```yaml
+version: "1"
+description: "GitHub MCP server policies"
+
+hide:
+  - delete_repository
+  - list_webhooks
+  - transfer_repository
+
+tools:
+  create_issue:
+    rules:
+      - name: "hourly issue limit"
+        rate_limit: 5/hour
+```
+
+Each entry is a tool name. The special value `"*"` hides all tools.
+
+Hidden tools receive the denial message: `Tool "<name>" is hidden by policy`.
+
+This is useful when an MCP server exposes many tools (30-50+) but only a few are relevant to the task. Removing irrelevant tools saves context window tokens and prevents the agent from attempting calls that would be denied.
 
 ## Default policy posture
 
@@ -310,6 +337,10 @@ Rate-limits issue and PR creation, blocks repository deletion, and enforces a gl
 version: "1"
 description: "GitHub MCP server policies"
 
+hide:
+  - transfer_repository
+  - list_webhooks
+
 tools:
   create_issue:
     rules:
@@ -415,6 +446,8 @@ Run `intercept validate -c policy.yaml` to check a policy file for errors. Every
 
 | Error | Cause | Fix |
 |---|---|---|
+| `hide[N]: entry must not be empty` | An entry in the `hide` list is blank | Remove the empty entry or provide a tool name |
+| `hide: duplicate entry "<name>"` | The same tool name appears more than once in `hide` | Remove the duplicate |
 | `version must be "1", got "<x>"` | The `version` field is missing or not `"1"` | Set `version: "1"` |
 | `default must be "allow" or "deny", got "<x>"` | The `default` field has an unrecognised value | Use `"allow"` or `"deny"`, or omit the field |
 | `rule must have a name` | A rule is missing the `name` field | Add a `name` to the rule |

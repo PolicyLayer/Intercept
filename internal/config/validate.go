@@ -44,6 +44,8 @@ func Validate(cfg *Config) []error {
 		errs = append(errs, fmt.Errorf("default must be %q or %q, got %q", "allow", "deny", cfg.Default))
 	}
 
+	errs = append(errs, validateHide(cfg.Hide)...)
+
 	toolNames := make([]string, 0, len(cfg.Tools))
 	for name := range cfg.Tools {
 		toolNames = append(toolNames, name)
@@ -246,6 +248,24 @@ func isSlice(v any) bool {
 	}
 	_, ok := v.([]any)
 	return ok
+}
+
+// validateHide checks the hide list for empty entries and duplicates.
+func validateHide(hide []string) []error {
+	var errs []error
+	seen := make(map[string]bool, len(hide))
+	for i, name := range hide {
+		if strings.TrimSpace(name) == "" {
+			errs = append(errs, fmt.Errorf("hide[%d]: entry must not be empty", i))
+			continue
+		}
+		if seen[name] {
+			errs = append(errs, fmt.Errorf("hide: duplicate entry %q", name))
+		} else {
+			seen[name] = true
+		}
+	}
+	return errs
 }
 
 // isNumeric returns true if v is a numeric type (int, int64, float32, float64).

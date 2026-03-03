@@ -15,6 +15,7 @@ type Config struct {
 	Version     string             `yaml:"version"`
 	Description string             `yaml:"description"`
 	Default     string             `yaml:"default"`
+	Hide        []string           `yaml:"hide"`
 	Tools       map[string]ToolDef `yaml:"tools"`
 }
 

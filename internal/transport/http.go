@@ -23,11 +23,12 @@ const maxRequestBody = 10 * 1024 * 1024
 // It serves both Streamable HTTP (POST/GET/DELETE /mcp) and legacy SSE
 // (GET /sse, POST /message) protocols to clients simultaneously.
 type HTTPTransport struct {
-	Upstream      string    // upstream MCP server URL
-	Bind          string    // local bind address
-	Port          int       // local port (0 = auto)
-	Stderr        io.Writer // for startup message
-	TransportMode string    // "sse", "http", or "" for auto-detect
+	Upstream       string    // upstream MCP server URL
+	Bind           string    // local bind address
+	Port           int       // local port (0 = auto)
+	Stderr         io.Writer // for startup message
+	TransportMode  string    // "sse", "http", or "" for auto-detect
+	ToolListFilter ToolListFilter
 }
 
 // Start creates a local HTTP server that proxies to the upstream MCP server.
@@ -51,6 +52,7 @@ func (t *HTTPTransport) Start(ctx context.Context, handler ToolCallHandler) erro
 		client:       &http.Client{Timeout: 0}, // no timeout; SSE streams are long-lived
 		handler:      handler,
 		upstreamMode: mode,
+		filter:       t.ToolListFilter,
 	}
 
 	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", t.Bind, t.Port))
@@ -98,6 +100,7 @@ type httpProxy struct {
 	client       *http.Client
 	handler      ToolCallHandler
 	localBase    string
+	filter       ToolListFilter
 
 	upstreamMode string // "streamable" or "sse"
 
@@ -138,7 +141,7 @@ func (p *httpProxy) handlePostMCP(w http.ResponseWriter, r *http.Request) {
 	var msg rpcMessage
 	if err := json.Unmarshal(body, &msg); err != nil {
 		// Not valid JSON-RPC; forward as-is.
-		p.forwardAndRelay(w, r, body, nil)
+		p.forwardAndRelay(w, r, body, nil, nil)
 		return
 	}
 
@@ -152,11 +155,18 @@ func (p *httpProxy) handlePostMCP(w http.ResponseWriter, r *http.Request) {
 		if ir.onResponse != nil {
 			pending.Add(msg.ID, ir.onResponse)
 		}
-		p.forwardAndRelay(w, r, body, pending)
+		p.forwardAndRelay(w, r, body, pending, nil)
 		return
 	}
 
-	p.forwardAndRelay(w, r, body, nil)
+	// Register filter for tools/list requests.
+	var filters *pendingFilters
+	if isToolsList(&msg) && p.filter != nil {
+		filters = newPendingFilters()
+		registerToolListFilter(&msg, p.filter, filters)
+	}
+
+	p.forwardAndRelay(w, r, body, nil, filters)
 }
 
 // handleBatch processes a JSON-RPC batch request. tools/call messages are
@@ -166,6 +176,15 @@ func (p *httpProxy) handleBatch(w http.ResponseWriter, r *http.Request, rawBody 
 	pending := newPendingCallbacks()
 	for _, cb := range br.callbacks {
 		pending.Add(cb.id, cb.fn)
+	}
+	var filters *pendingFilters
+	for i := range batch {
+		if isToolsList(&batch[i]) && p.filter != nil {
+			if filters == nil {
+				filters = newPendingFilters()
+			}
+			registerToolListFilter(&batch[i], p.filter, filters)
+		}
 	}
 
 	forwardMsgs := br.forwardMsgs
@@ -213,15 +232,16 @@ func (p *httpProxy) handleBatch(w http.ResponseWriter, r *http.Request, rawBody 
 				fn(upstreamBody)
 			}
 		}
-		upstreamResponses = []json.RawMessage{upstreamBody}
+		upstreamResponses = []json.RawMessage{json.RawMessage(applyFilter(upstreamBody, filters))}
 	} else {
-		for _, raw := range upstreamResponses {
+		for i, raw := range upstreamResponses {
 			var msg rpcMessage
 			if json.Unmarshal(raw, &msg) == nil && msg.ID != nil {
 				if fn, ok := pending.Take(msg.ID); ok {
 					fn(raw)
 				}
 			}
+			upstreamResponses[i] = json.RawMessage(applyFilter([]byte(raw), filters))
 		}
 	}
 
@@ -266,7 +286,7 @@ func (p *httpProxy) handleGetMCP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		p.relaySSE(sw, newSSEReader(resp.Body), nil)
+		p.relaySSE(sw, newSSEReader(resp.Body), nil, nil)
 		return
 	}
 
@@ -327,7 +347,7 @@ func (p *httpProxy) handleGetSSE(w http.ResponseWriter, r *http.Request) {
 		defer upstreamCloser.Close()
 		sess.upstreamPostURL = upstreamPostURL
 		p.initLegacySession(w, sw, sessionID, sess)
-		p.relaySSE(sw, upstreamReader, sess.pending)
+		p.relaySSE(sw, upstreamReader, sess.pending, nil)
 	} else {
 		sess.upstreamPostURL = p.upstream
 		p.initLegacySession(w, sw, sessionID, sess)
@@ -346,7 +366,7 @@ func (p *httpProxy) handleGetSSE(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer resp.Body.Close()
-		p.relaySSE(sw, newSSEReader(resp.Body), nil)
+		p.relaySSE(sw, newSSEReader(resp.Body), nil, nil)
 	}
 
 	p.legacySessions.Delete(sessionID)
@@ -471,7 +491,7 @@ func (p *httpProxy) connectLegacyUpstream(ctx context.Context) (postURL string, 
 
 // forwardAndRelay sends a request to upstream and relays the response to the client.
 // If pending is non-nil, response callbacks are checked for JSON responses.
-func (p *httpProxy) forwardAndRelay(w http.ResponseWriter, r *http.Request, body []byte, pending *pendingCallbacks) {
+func (p *httpProxy) forwardAndRelay(w http.ResponseWriter, r *http.Request, body []byte, pending *pendingCallbacks, filters *pendingFilters) {
 	resp, err := p.doUpstreamRequest(r, body)
 	if err != nil {
 		httpError(w, http.StatusBadGateway, "upstream unreachable")
@@ -489,7 +509,7 @@ func (p *httpProxy) forwardAndRelay(w http.ResponseWriter, r *http.Request, body
 		if err != nil {
 			return
 		}
-		p.relaySSE(sw, newSSEReader(resp.Body), pending)
+		p.relaySSE(sw, newSSEReader(resp.Body), pending, filters)
 
 	case resp.StatusCode == http.StatusAccepted:
 		copyResponseHeaders(w, resp.Header)
@@ -511,6 +531,8 @@ func (p *httpProxy) forwardAndRelay(w http.ResponseWriter, r *http.Request, body
 				}
 			}
 		}
+
+		respBody = applyFilter(respBody, filters)
 
 		copyResponseHeaders(w, resp.Header)
 		w.WriteHeader(resp.StatusCode)
@@ -534,20 +556,24 @@ func (p *httpProxy) doUpstreamRequest(r *http.Request, body []byte) (*http.Respo
 
 // relaySSE streams SSE events from upstream to the client, invoking pending
 // callbacks for response messages.
-func (p *httpProxy) relaySSE(sw *sseWriter, reader *sseReader, pending *pendingCallbacks) {
+func (p *httpProxy) relaySSE(sw *sseWriter, reader *sseReader, pending *pendingCallbacks, filters *pendingFilters) {
 	for {
 		ev, err := reader.Next()
 		if err != nil {
 			return
 		}
 
-		if pending != nil && (ev.Type == "message" || ev.Type == "") {
-			var msg rpcMessage
-			if json.Unmarshal([]byte(ev.Data), &msg) == nil && !msg.isRequest() && msg.ID != nil {
-				if fn, ok := pending.Take(msg.ID); ok {
-					fn(json.RawMessage(ev.Data))
+		if ev.Type == "message" || ev.Type == "" {
+			if pending != nil {
+				var msg rpcMessage
+				if json.Unmarshal([]byte(ev.Data), &msg) == nil && !msg.isRequest() && msg.ID != nil {
+					if fn, ok := pending.Take(msg.ID); ok {
+						fn(json.RawMessage(ev.Data))
+					}
 				}
 			}
+			filtered := applyFilter([]byte(ev.Data), filters)
+			ev.Data = string(filtered)
 		}
 
 		if err := sw.WriteEvent(ev); err != nil {

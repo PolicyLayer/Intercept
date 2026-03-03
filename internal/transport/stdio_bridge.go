@@ -21,21 +21,23 @@ import (
 // server. Responses (JSON or SSE) are converted back to newline-delimited JSON
 // on stdout.
 type StdioBridgeTransport struct {
-	URL     string
-	Headers map[string]string
-	Stdin   io.Reader
-	Stdout  io.Writer
-	Stderr  io.Writer
+	URL            string
+	Headers        map[string]string
+	Stdin          io.Reader
+	Stdout         io.Writer
+	Stderr         io.Writer
+	ToolListFilter ToolListFilter
 }
 
 // NewStdioBridgeTransport returns a StdioBridgeTransport wired to os.Stdin/Stdout/Stderr.
-func NewStdioBridgeTransport(url string, headers map[string]string) *StdioBridgeTransport {
+func NewStdioBridgeTransport(url string, headers map[string]string, filter ToolListFilter) *StdioBridgeTransport {
 	return &StdioBridgeTransport{
-		URL:     url,
-		Headers: headers,
-		Stdin:   os.Stdin,
-		Stdout:  os.Stdout,
-		Stderr:  os.Stderr,
+		URL:            url,
+		Headers:        headers,
+		ToolListFilter: filter,
+		Stdin:          os.Stdin,
+		Stdout:         os.Stdout,
+		Stderr:         os.Stderr,
 	}
 }
 
@@ -57,6 +59,8 @@ func (t *StdioBridgeTransport) Start(ctx context.Context, handler ToolCallHandle
 		handler: handler,
 		out:     &syncWriter{w: t.Stdout},
 		pending: newPendingCallbacks(),
+		filter:  t.ToolListFilter,
+		filters: newPendingFilters(),
 	}
 
 	// Forward termination signals to trigger clean shutdown.
@@ -100,6 +104,8 @@ type bridgeClient struct {
 	handler ToolCallHandler
 	out     *syncWriter
 	pending *pendingCallbacks
+	filter  ToolListFilter
+	filters *pendingFilters
 
 	mu        sync.Mutex
 	sessionID string
@@ -141,6 +147,8 @@ func (c *bridgeClient) handleSingle(ctx context.Context, msg rpcMessage, rawLine
 		}
 	}
 
+	registerToolListFilter(&msg, c.filter, c.filters)
+
 	return c.postAndRelay(ctx, rawLine)
 }
 
@@ -149,6 +157,9 @@ func (c *bridgeClient) handleBatch(ctx context.Context, rawBody []byte, batch []
 	br := interceptBatch(batch, c.handler)
 	for _, cb := range br.callbacks {
 		c.pending.Add(cb.id, cb.fn)
+	}
+	for i := range batch {
+		registerToolListFilter(&batch[i], c.filter, c.filters)
 	}
 
 	forwardMsgs := br.forwardMsgs
@@ -267,6 +278,8 @@ func (c *bridgeClient) relayResponse(resp *http.Response) error {
 			}
 		}
 
+		body = applyFilter(body, c.filters)
+
 		// Start notification stream after receiving a session ID (typically
 		// from the InitializeResult response).
 		c.maybeStartNotificationStream()
@@ -306,6 +319,7 @@ func (c *bridgeClient) relaySSEToStdout(r io.Reader) error {
 			}
 		}
 
+		data = applyFilter(data, c.filters)
 		c.out.writeLine(data)
 	}
 }

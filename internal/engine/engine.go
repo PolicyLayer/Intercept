@@ -53,8 +53,34 @@ func (e *Engine) SetConfig(cfg *config.Config) {
 // A "deny" action immediately denies. For "evaluate" actions, all conditions
 // must pass (AND logic); the first failing condition denies.
 // If no rules match and default is "allow", the call is allowed.
+
+// HiddenTools returns a set of hidden tool names from the current config.
+// Returns nil if the hide list is empty.
+func (e *Engine) HiddenTools() map[string]bool {
+	cfg := e.cfg.Load()
+	if len(cfg.Hide) == 0 {
+		return nil
+	}
+	m := make(map[string]bool, len(cfg.Hide))
+	for _, name := range cfg.Hide {
+		m[name] = true
+	}
+	return m
+}
+
 func (e *Engine) Evaluate(call ToolCall) Decision {
 	cfg := e.cfg.Load()
+
+	// Check hide list before rule evaluation.
+	for _, name := range cfg.Hide {
+		if name == call.Name || name == "*" {
+			return Decision{
+				Allowed: false,
+				Rule:    "(hidden)",
+				Message: fmt.Sprintf("Tool %q is hidden by policy", call.Name),
+			}
+		}
+	}
 
 	if cfg.Default == "deny" {
 		if _, listed := cfg.Tools[call.Name]; !listed {

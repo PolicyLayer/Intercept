@@ -512,3 +512,62 @@ func TestValidateWindows(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateHideDuplicateEntries(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		Hide:    []string{"tool_a", "tool_b", "tool_a"},
+		Tools:   map[string]ToolDef{},
+	}
+	errs := Validate(cfg)
+	found := false
+	for _, e := range errs {
+		if strings.Contains(e.Error(), "duplicate entry") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected error containing \"duplicate entry\"")
+		for _, e := range errs {
+			t.Logf("  got: %v", e)
+		}
+	}
+}
+
+func TestValidateHideEmptyString(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		Hide:    []string{"tool_a", ""},
+		Tools:   map[string]ToolDef{},
+	}
+	errs := Validate(cfg)
+	found := false
+	for _, e := range errs {
+		if strings.Contains(e.Error(), "must not be empty") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected error containing \"must not be empty\"")
+		for _, e := range errs {
+			t.Logf("  got: %v", e)
+		}
+	}
+}
+
+func TestValidateHideValid(t *testing.T) {
+	cfg := &Config{
+		Version: "1",
+		Default: "allow",
+		Hide:    []string{"tool_a", "tool_b"},
+		Tools:   map[string]ToolDef{},
+	}
+	errs := Validate(cfg)
+	if len(errs) > 0 {
+		for _, e := range errs {
+			t.Errorf("unexpected validation error: %v", e)
+		}
+	}
+}

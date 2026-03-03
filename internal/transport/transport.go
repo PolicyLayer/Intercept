@@ -33,3 +33,8 @@ type ToolCallResult struct {
 
 // ToolCallHandler inspects a tools/call request and decides whether to intercept it.
 type ToolCallHandler func(req ToolCallRequest) ToolCallResult
+
+// ToolListFilter transforms a tools/list JSON-RPC response body, typically to
+// remove hidden tools. Returns the modified body. A nil ToolListFilter means
+// no filtering is needed.
+type ToolListFilter func(responseBody json.RawMessage) json.RawMessage

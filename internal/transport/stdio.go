@@ -17,19 +17,21 @@ import (
 // StdioTransport spawns an upstream MCP server as a child process and proxies
 // newline-delimited JSON-RPC messages bidirectionally over stdin/stdout.
 type StdioTransport struct {
-	Command []string
-	Stdin   io.Reader
-	Stdout  io.Writer
-	Stderr  io.Writer
+	Command        []string
+	Stdin          io.Reader
+	Stdout         io.Writer
+	Stderr         io.Writer
+	ToolListFilter ToolListFilter
 }
 
 // NewStdioTransport returns a StdioTransport wired to os.Stdin/Stdout/Stderr.
-func NewStdioTransport(command []string) *StdioTransport {
+func NewStdioTransport(command []string, filter ToolListFilter) *StdioTransport {
 	return &StdioTransport{
-		Command: command,
-		Stdin:   os.Stdin,
-		Stdout:  os.Stdout,
-		Stderr:  os.Stderr,
+		Command:        command,
+		ToolListFilter: filter,
+		Stdin:          os.Stdin,
+		Stdout:         os.Stdout,
+		Stderr:         os.Stderr,
 	}
 }
 
@@ -66,18 +68,19 @@ func (t *StdioTransport) Start(ctx context.Context, handler ToolCallHandler) err
 	// Shared writer for client stdout (both goroutines may write to it).
 	sw := &syncWriter{w: t.Stdout}
 	pending := newPendingCallbacks()
+	filters := newPendingFilters()
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		t.proxyClientToChild(innerCtx, t.Stdin, childIn, sw, handler, pending)
+		t.proxyClientToChild(innerCtx, t.Stdin, childIn, sw, handler, pending, filters)
 	}()
 
 	go func() {
 		defer wg.Done()
-		t.proxyChildToClient(childOut, sw, pending)
+		t.proxyChildToClient(childOut, sw, pending, filters)
 	}()
 
 	// Forward termination signals to the child process group.
@@ -106,7 +109,7 @@ func (t *StdioTransport) Start(ctx context.Context, handler ToolCallHandler) err
 
 // proxyClientToChild reads lines from the client and forwards them to the child,
 // intercepting tools/call messages via the handler.
-func (t *StdioTransport) proxyClientToChild(ctx context.Context, client io.Reader, child io.WriteCloser, out *syncWriter, handler ToolCallHandler, pending *pendingCallbacks) {
+func (t *StdioTransport) proxyClientToChild(ctx context.Context, client io.Reader, child io.WriteCloser, out *syncWriter, handler ToolCallHandler, pending *pendingCallbacks, filters *pendingFilters) {
 	defer child.Close()
 
 	scanner := bufio.NewScanner(client)
@@ -138,6 +141,8 @@ func (t *StdioTransport) proxyClientToChild(ctx context.Context, client io.Reade
 			}
 		}
 
+		registerToolListFilter(&msg, t.ToolListFilter, filters)
+
 		writeLineRaw(child, line)
 	}
 }
@@ -145,7 +150,7 @@ func (t *StdioTransport) proxyClientToChild(ctx context.Context, client io.Reade
 // proxyChildToClient reads lines from the child and writes them to the client.
 // For each line that looks like a JSON-RPC response (has ID, no method), it
 // checks for a pending OnResponse callback and invokes it.
-func (t *StdioTransport) proxyChildToClient(child io.Reader, out *syncWriter, pending *pendingCallbacks) {
+func (t *StdioTransport) proxyChildToClient(child io.Reader, out *syncWriter, pending *pendingCallbacks, filters *pendingFilters) {
 	scanner := bufio.NewScanner(child)
 	scanner.Buffer(make([]byte, 0, 64*1024), maxScannerBuffer)
 
@@ -161,6 +166,7 @@ func (t *StdioTransport) proxyChildToClient(child io.Reader, out *syncWriter, pe
 			}
 		}
 
+		line = applyFilter(line, filters)
 		out.writeLine(line)
 	}
 }

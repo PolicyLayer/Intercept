@@ -152,54 +152,6 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		"description", cfg.Description,
 	)
 
-	var tr transport.Transport
-	var serverName string
-
-	// Validate explicit --transport against the provided flags.
-	if transportMode == "stdio" && hasUpstreamCmd && hasUpstreamURL {
-		return fmt.Errorf("cannot specify both upstream command (after --) and --upstream URL")
-	}
-	if (transportMode == "sse" || transportMode == "http") && hasUpstreamCmd {
-		return fmt.Errorf("upstream command (after --) cannot be used with --transport %s", transportMode)
-	}
-
-	switch {
-	// stdio with upstream command (e.g. intercept -- npx server-github)
-	case hasUpstreamCmd && !hasUpstreamURL && (transportMode == "" || transportMode == "stdio"):
-		upstreamCmd := args[dashIdx:]
-		slog.Debug("upstream command", "args", upstreamCmd)
-		tr = transport.NewStdioTransport(upstreamCmd)
-		serverName = filepath.Base(upstreamCmd[0])
-
-	// HTTP/SSE proxy (e.g. intercept --upstream https://mcp.stripe.com --transport http)
-	case (transportMode == "sse" || transportMode == "http") && hasUpstreamURL:
-		slog.Debug("upstream URL", "url", upstream, "transport", transportMode)
-		tr = &transport.HTTPTransport{
-			Upstream:      upstream,
-			Bind:          bind,
-			Port:          port,
-			Stderr:        os.Stderr,
-			TransportMode: transportMode,
-		}
-		serverName = upstream
-
-	// stdio bridge to upstream URL (e.g. intercept --upstream https://mcp.stripe.com)
-	case hasUpstreamURL && !hasUpstreamCmd && (transportMode == "" || transportMode == "stdio"):
-		hdrs, err := parseHeaders(headers)
-		if err != nil {
-			return err
-		}
-		slog.Debug("stdio proxy to upstream URL", "url", upstream)
-		tr = transport.NewStdioBridgeTransport(upstream, hdrs)
-		serverName = upstream
-
-	case hasUpstreamCmd && hasUpstreamURL:
-		return fmt.Errorf("cannot specify both upstream command (after --) and --upstream URL")
-
-	default:
-		return fmt.Errorf("specify either a command after '--' or --upstream URL\nRun 'intercept --help' for usage examples.")
-	}
-
 	store, err := state.OpenStore(stateDSN, stateDir, statePrefix, stateFailMode)
 	if err != nil {
 		return fmt.Errorf("opening state store: %w", err)
@@ -227,6 +179,59 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		stateBackend = stateDSN
 	}
 
+	eng := engine.New(cfg, store)
+	h := proxy.New(eng, store, cfg, emitter)
+	filter := h.ToolListFilter()
+
+	var tr transport.Transport
+	var serverName string
+
+	// Validate explicit --transport against the provided flags.
+	if transportMode == "stdio" && hasUpstreamCmd && hasUpstreamURL {
+		return fmt.Errorf("cannot specify both upstream command (after --) and --upstream URL")
+	}
+	if (transportMode == "sse" || transportMode == "http") && hasUpstreamCmd {
+		return fmt.Errorf("upstream command (after --) cannot be used with --transport %s", transportMode)
+	}
+
+	switch {
+	// stdio with upstream command (e.g. intercept -- npx server-github)
+	case hasUpstreamCmd && !hasUpstreamURL && (transportMode == "" || transportMode == "stdio"):
+		upstreamCmd := args[dashIdx:]
+		slog.Debug("upstream command", "args", upstreamCmd)
+		tr = transport.NewStdioTransport(upstreamCmd, filter)
+		serverName = filepath.Base(upstreamCmd[0])
+
+	// HTTP/SSE proxy (e.g. intercept --upstream https://mcp.stripe.com --transport http)
+	case (transportMode == "sse" || transportMode == "http") && hasUpstreamURL:
+		slog.Debug("upstream URL", "url", upstream, "transport", transportMode)
+		tr = &transport.HTTPTransport{
+			Upstream:       upstream,
+			Bind:           bind,
+			Port:           port,
+			Stderr:         os.Stderr,
+			TransportMode:  transportMode,
+			ToolListFilter: filter,
+		}
+		serverName = upstream
+
+	// stdio bridge to upstream URL (e.g. intercept --upstream https://mcp.stripe.com)
+	case hasUpstreamURL && !hasUpstreamCmd && (transportMode == "" || transportMode == "stdio"):
+		hdrs, err := parseHeaders(headers)
+		if err != nil {
+			return err
+		}
+		slog.Debug("stdio proxy to upstream URL", "url", upstream)
+		tr = transport.NewStdioBridgeTransport(upstream, hdrs, filter)
+		serverName = upstream
+
+	case hasUpstreamCmd && hasUpstreamURL:
+		return fmt.Errorf("cannot specify both upstream command (after --) and --upstream URL")
+
+	default:
+		return fmt.Errorf("specify either a command after '--' or --upstream URL\nRun 'intercept --help' for usage examples.")
+	}
+
 	emitter.Emit(events.Event{
 		Type:         "startup",
 		Server:       serverName,
@@ -235,9 +240,6 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		StateBackend: stateBackend,
 		FailMode:     stateFailMode,
 	})
-
-	eng := engine.New(cfg, store)
-	h := proxy.New(eng, store, cfg, emitter)
 
 	var currentCfg atomic.Pointer[config.Config]
 	currentCfg.Store(cfg)

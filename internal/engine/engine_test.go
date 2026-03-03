@@ -756,3 +756,83 @@ func TestSetConfigConcurrent(t *testing.T) {
 
 	wg.Wait()
 }
+
+// --- Hide feature tests ---
+
+func TestHiddenToolDenied(t *testing.T) {
+	e := New(&config.Config{
+		Version: "1",
+		Hide:    []string{"secret_tool"},
+		Tools:   map[string]config.ToolDef{},
+	}, nil)
+
+	d := e.Evaluate(call("secret_tool", map[string]any{}))
+	if d.Allowed {
+		t.Error("hidden tool should be denied")
+	}
+	want := `Tool "secret_tool" is hidden by policy`
+	if d.Message != want {
+		t.Errorf("message = %q, want %q", d.Message, want)
+	}
+}
+
+func TestHiddenToolsMethod(t *testing.T) {
+	e := New(&config.Config{
+		Version: "1",
+		Hide:    []string{"tool_a", "tool_b"},
+		Tools:   map[string]config.ToolDef{},
+	}, nil)
+
+	hidden := e.HiddenTools()
+	if len(hidden) != 2 {
+		t.Fatalf("hidden count = %d, want 2", len(hidden))
+	}
+	if !hidden["tool_a"] {
+		t.Error("expected tool_a in hidden set")
+	}
+	if !hidden["tool_b"] {
+		t.Error("expected tool_b in hidden set")
+	}
+
+	// Empty hide list returns nil.
+	e2 := New(&config.Config{
+		Version: "1",
+		Tools:   map[string]config.ToolDef{},
+	}, nil)
+	if got := e2.HiddenTools(); got != nil {
+		t.Errorf("expected nil for empty hide list, got %v", got)
+	}
+}
+
+func TestHideWildcardDeniesAll(t *testing.T) {
+	e := New(&config.Config{
+		Version: "1",
+		Hide:    []string{"*"},
+		Tools:   map[string]config.ToolDef{},
+	}, nil)
+
+	for _, name := range []string{"tool_a", "tool_b", "anything"} {
+		d := e.Evaluate(call(name, map[string]any{}))
+		if d.Allowed {
+			t.Errorf("wildcard hide should deny %q", name)
+		}
+	}
+}
+
+func TestHiddenToolNotAffectOthers(t *testing.T) {
+	e := New(&config.Config{
+		Version: "1",
+		Hide:    []string{"tool_x"},
+		Tools:   map[string]config.ToolDef{},
+	}, nil)
+
+	d := e.Evaluate(call("tool_x", map[string]any{}))
+	if d.Allowed {
+		t.Error("hidden tool_x should be denied")
+	}
+
+	d = e.Evaluate(call("tool_y", map[string]any{}))
+	if !d.Allowed {
+		t.Error("tool_y should be allowed when only tool_x is hidden")
+	}
+}
