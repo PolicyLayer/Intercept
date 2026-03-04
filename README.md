@@ -1,6 +1,6 @@
 # Intercept
 
-Intercept is a transparent proxy that sits between an AI agent and an MCP (Model Context Protocol) server. It intercepts every tool call the agent makes and enforces policy rules defined in a YAML file: argument validation, rate limiting, unconditional blocks, and more. If a call violates policy, Intercept returns a denial message to the agent instead of forwarding the call.
+Intercept is a deterministic enforcement proxy for the Model Context Protocol (MCP). It sits between an AI agent and an MCP server, evaluating every `tools/call` request against YAML-defined policies. Violating calls are blocked at the transport layer before reaching the upstream server.
 
 ```
 ┌──────────┐       ┌───────────┐       ┌────────────┐
@@ -18,12 +18,23 @@ Intercept is a transparent proxy that sits between an AI agent and an MCP (Model
                    └─────────┘
 ```
 
+## What it does
+
+- **Block tool calls** — deny dangerous tools unconditionally (e.g. `delete_repository`)
+- **Validate arguments** — enforce constraints on tool arguments (`amount <= 500`, `currency in [usd, eur]`)
+- **Rate limit** — cap calls per minute, hour, or day with `rate_limit: 5/hour` shorthand
+- **Track spend** — stateful counters with dynamic increments (e.g. sum `args.amount` across calls)
+- **Hide tools** — strip tools from `tools/list` so the agent never sees them, saving context window tokens
+- **Default deny** — allowlist mode where only explicitly listed tools are permitted
+- **Hot reload** — edit the policy file while running; changes apply immediately without restart
+- **Validate policies** — `intercept validate -c policy.yaml` catches errors before deployment
+
 ## Install
 
-npx:
+**npx:**
 
 ```sh
-npx -y @policylayer/intercept -c policy.yaml -- npx -y @modelcontextprotocol/server-github
+npx -y @policylayer/intercept -c policy.yaml --upstream https://mcp.stripe.com --header "Authorization: Bearer sk_live_..."
 ```
 
 **npm:**
@@ -47,28 +58,64 @@ Download from [GitHub Releases](https://github.com/policylayer/intercept/release
 **1. Generate a policy scaffold from a running MCP server:**
 
 ```sh
-intercept scan -o policy.yaml -- npx -y @modelcontextprotocol/server-github
+intercept scan -o policy.yaml -- npx -y @modelcontextprotocol/server-stripe
 ```
 
 This connects to the server, discovers all available tools, and writes a commented YAML file listing each tool with its parameters.
 
-**2. Edit the policy to add rules.** For example, block repository deletion:
+**2. Edit the policy to add rules:**
 
 ```yaml
-delete_repository:
-  rules:
-    - name: "block repo deletion"
-      action: "deny"
-      on_deny: "Repository deletion is not permitted"
+version: "1"
+description: "Stripe MCP server policies"
+
+hide:
+  - delete_customer
+  - delete_product
+  - delete_invoice
+
+tools:
+  create_charge:
+    rules:
+      - name: "max single charge"
+        conditions:
+          - path: "args.amount"
+            op: "lte"
+            value: 50000
+        on_deny: "Single charge cannot exceed $500.00"
+
+      - name: "daily spend cap"
+        conditions:
+          - path: "state.create_charge.daily_spend"
+            op: "lte"
+            value: 1000000
+        on_deny: "Daily spending cap of $10,000.00 reached"
+        state:
+          counter: "daily_spend"
+          window: "day"
+          increment_from: "args.amount"
+
+      - name: "allowed currencies"
+        conditions:
+          - path: "args.currency"
+            op: "in"
+            value: ["usd", "eur"]
+        on_deny: "Only USD and EUR charges are permitted"
+
+  create_refund:
+    rules:
+      - name: "refund limit"
+        rate_limit: 10/day
+        on_deny: "Daily refund limit (10) reached"
 ```
 
 **3. Run the proxy:**
 
 ```sh
-intercept -c policy.yaml -- npx -y @modelcontextprotocol/server-github
+intercept -c policy.yaml --upstream https://mcp.stripe.com --header "Authorization: Bearer sk_live_..."
 ```
 
-Intercept launches the upstream server as a subprocess, proxies all MCP traffic, and enforces your policy on every tool call.
+Intercept proxies all MCP traffic and enforces your policy on every tool call. Hidden tools are stripped from the agent's view entirely.
 
 ## MCP client integration
 
@@ -107,6 +154,14 @@ For remote HTTP servers, use `--upstream` instead of a command:
     }
   }
 }
+```
+
+## State backends
+
+Rate limits and counters persist across restarts. SQLite is the default (zero config). Redis is supported for multi-instance deployments:
+
+```sh
+intercept -c policy.yaml --state-dsn redis://localhost:6379 --upstream https://mcp.stripe.com
 ```
 
 ## Documentation
