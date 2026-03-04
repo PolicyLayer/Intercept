@@ -1,3 +1,4 @@
 .claude
 /intercept
 dist/
+scripts/generate-policies/

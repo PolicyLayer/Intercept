@@ -6,6 +6,8 @@ This document covers the YAML policy file format used by Intercept to enforce ru
 
 A policy file defines which tool calls are allowed, denied, or rate-limited. Intercept loads the policy on startup and evaluates every incoming `tools/call` request against it. Calls that pass all rules are forwarded to the upstream MCP server. Calls that fail any rule receive a denial message instead.
 
+> **Quick start:** The [`policies/`](policies/) directory contains ready-made scaffolds for 43 MCP servers. Copy one and add your rules.
+
 ## Top-level structure
 
 ```yaml

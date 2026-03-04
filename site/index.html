@@ -28,6 +28,8 @@
       --white: #ffffff;
       --grid-line: #d1d1d1;
       --accent: #f9f9f9;
+      --muted: #666666;
+      --code-bg: #f0f0f0;
     }
 
     * {
@@ -282,6 +284,12 @@
       margin-bottom: 15px;
     }
 
+    /* ─── TINTED SECTIONS ─── */
+
+    .section-tinted {
+      background: var(--accent);
+    }
+
     /* ─── SPEC TABLE ─── */
 
     .spec-table {
@@ -378,6 +386,76 @@
       white-space: pre-wrap;
       overflow-wrap: break-word;
       word-break: normal;
+    }
+
+    /* ─── POLICY LIBRARY GRID ─── */
+
+    .policy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0;
+      border: 2px solid var(--black);
+      margin-top: 30px;
+    }
+
+    .policy-card {
+      padding: 24px;
+      border-right: 2px solid var(--black);
+      border-bottom: 2px solid var(--black);
+      text-decoration: none;
+      color: var(--black);
+      transition: background 0.15s;
+    }
+
+    .policy-card:hover {
+      background: var(--accent);
+    }
+
+    .policy-card-name {
+      font-weight: 900;
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .policy-card-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .policy-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--code-bg);
+      padding: 2px 8px;
+      font-weight: bold;
+      color: var(--muted);
+    }
+
+    .policy-browse {
+      display: block;
+      text-align: center;
+      padding: 20px;
+      font-weight: 900;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--black);
+      border: 2px solid var(--black);
+      border-top: none;
+      margin-top: 0;
+      transition: background 0.15s;
+    }
+
+    .policy-browse:hover {
+      background: var(--accent);
     }
 
     /* ─── ASCII DIAGRAM ─── */
@@ -705,6 +783,18 @@
         margin: 0;
       }
 
+      .policy-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .policy-card {
+        border-right: none;
+      }
+
+      .policy-card:nth-child(odd) {
+        border-right: 2px solid var(--black);
+      }
+
       .int-grid {
         border: none;
         border-top: 2px solid var(--black);
@@ -838,7 +928,7 @@
   <!-- ─── HEADER ─── -->
 
   <header>
-    <div class="logo">INTERCEPT</div>
+    <a href="/" class="logo">INTERCEPT</a>
     <input type="checkbox" id="menu-toggle" class="menu-toggle">
     <label for="menu-toggle" class="menu-btn">
       <span></span>
@@ -846,7 +936,8 @@
       <span></span>
     </label>
     <nav>
-      <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy</a>
+      <a href="policies.html">Policies</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Docs</a>
       <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">Usage</a>
       <a href="https://github.com/policylayer/intercept">GitHub</a>
       <a href="#install" class="nav-bordered">Install</a>
@@ -906,7 +997,7 @@ reached</pre>
 
   <!-- ─── POLICY EXAMPLES ─── -->
 
-  <div class="section">
+  <div class="section section-tinted">
     <div class="section-label">Policy Examples</div>
     <h2>Real Policies, Real Enforcement</h2>
     <p class="subtitle">From the <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md" style="text-decoration: underline; text-underline-offset: 2px;">policy reference</a>. Every snippet runs as-is.</p>
@@ -1027,7 +1118,7 @@ tools:
 
   <!-- ─── HOW IT WORKS ─── -->
 
-  <div class="section" style="text-align: center;">
+  <div class="section section-tinted" style="text-align: center;">
     <div class="section-label">Architecture</div>
     <h2>How It Works</h2>
     <p class="subtitle">One proxy. Every tool call evaluated before reaching upstream.</p>
@@ -1127,6 +1218,67 @@ tools:
     </div>
   </div>
 
+  <!-- ─── POLICY LIBRARY ─── -->
+
+  <div class="section section-tinted">
+    <div class="section-label">Policy Library</div>
+    <h2>Pre-Built Policies for Popular MCP Servers</h2>
+    <p class="subtitle">Each scaffold lists every tool grouped by category. Copy one, add your rules, and enforce.</p>
+    <div class="policy-grid">
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/github.yaml" class="policy-card">
+        <div class="policy-card-name">GitHub</div>
+        <div class="policy-card-meta">83 tools</div>
+        <div class="policy-card-tags"><span class="tag">repositories</span><span class="tag">issues</span><span class="tag">PRs</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/stripe.yaml" class="policy-card">
+        <div class="policy-card-name">Stripe</div>
+        <div class="policy-card-meta">27 tools</div>
+        <div class="policy-card-tags"><span class="tag">payments</span><span class="tag">billing</span><span class="tag">invoices</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/aws.yaml" class="policy-card">
+        <div class="policy-card-name">AWS</div>
+        <div class="policy-card-meta">55 tools</div>
+        <div class="policy-card-tags"><span class="tag">cloud</span><span class="tag">s3</span><span class="tag">lambda</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/azure.yaml" class="policy-card">
+        <div class="policy-card-name">Azure</div>
+        <div class="policy-card-meta">49 tools</div>
+        <div class="policy-card-tags"><span class="tag">cloud</span><span class="tag">infrastructure</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/docker.yaml" class="policy-card">
+        <div class="policy-card-name">Docker</div>
+        <div class="policy-card-meta">19 tools</div>
+        <div class="policy-card-tags"><span class="tag">containers</span><span class="tag">images</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/mongodb.yaml" class="policy-card">
+        <div class="policy-card-name">MongoDB</div>
+        <div class="policy-card-meta">36 tools</div>
+        <div class="policy-card-tags"><span class="tag">database</span><span class="tag">nosql</span><span class="tag">atlas</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/cloudflare.yaml" class="policy-card">
+        <div class="policy-card-name">Cloudflare</div>
+        <div class="policy-card-meta">23 tools</div>
+        <div class="policy-card-tags"><span class="tag">workers</span><span class="tag">kv</span><span class="tag">dns</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/sentry.yaml" class="policy-card">
+        <div class="policy-card-name">Sentry</div>
+        <div class="policy-card-meta">25 tools</div>
+        <div class="policy-card-tags"><span class="tag">error-tracking</span><span class="tag">monitoring</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/grafana.yaml" class="policy-card">
+        <div class="policy-card-name">Grafana</div>
+        <div class="policy-card-meta">29 tools</div>
+        <div class="policy-card-tags"><span class="tag">observability</span><span class="tag">dashboards</span></div>
+      </a>
+      <a href="https://github.com/policylayer/intercept/blob/main/policies/supabase.yaml" class="policy-card">
+        <div class="policy-card-name">Supabase</div>
+        <div class="policy-card-meta">32 tools</div>
+        <div class="policy-card-tags"><span class="tag">postgres</span><span class="tag">edge-functions</span></div>
+      </a>
+    </div>
+    <a href="policies.html" class="policy-browse">Browse all policies &rarr;</a>
+  </div>
+
   <!-- ─── FAQ ─── -->
 
   <div class="faq-grid" style="border-bottom: 2px solid var(--black);">
@@ -1171,6 +1323,7 @@ go install github.com/policylayer/intercept@latest</pre>
   <footer>
     <div>Apache 2.0 Licence &middot; Built by <a href="https://policylayer.com" style="margin-left: 0;">PolicyLayer</a></div>
     <div>
+      <a href="policies.html">Policies</a>
       <a href="https://github.com/policylayer/intercept">GitHub</a>
       <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy Docs</a>
       <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">CLI Reference</a>

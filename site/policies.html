@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Library — Intercept</title>
+  <meta name="description" content="Ready-made policy scaffolds for popular MCP servers. GitHub, Stripe, AWS, Slack, Notion, and more. Copy one and start enforcing.">
+  <meta property="og:title" content="Policy Library — Intercept">
+  <meta property="og:description" content="Ready-made policy scaffolds for popular MCP servers. Copy one and start enforcing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://intercept.policylayer.com/policies.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@policylayer">
+  <meta name="twitter:title" content="Policy Library — Intercept">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NJ18SRL3D6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NJ18SRL3D6');
+  </script>
+  <style>
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --grid-line: #d1d1d1;
+      --accent: #f9f9f9;
+      --muted: #666666;
+      --code-bg: #f0f0f0;
+      --divider: var(--divider);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--white);
+      color: var(--black);
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -1;
+      opacity: 0.3;
+    }
+
+    a {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      border: 2px solid var(--black);
+      background: var(--white);
+    }
+
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      background: #f0f0f0;
+      padding: 2px 5px;
+    }
+
+    /* ─── HEADER ─── */
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 2px solid var(--black);
+    }
+
+    .logo {
+      font-weight: 900;
+      letter-spacing: -1px;
+      font-size: 1.2rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--black);
+      margin-left: 20px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    nav .nav-bordered {
+      border: 2px solid var(--black);
+      padding: 5px 15px;
+    }
+
+    .menu-toggle {
+      display: none;
+    }
+
+    .menu-btn {
+      display: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 5px;
+    }
+
+    .menu-btn span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--black);
+      margin: 5px 0;
+    }
+
+    /* ─── HERO ─── */
+
+    .hero {
+      padding: 60px 40px;
+      border-bottom: 2px solid var(--black);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      line-height: 0.9;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      letter-spacing: -3px;
+      font-weight: 900;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+
+    .hero pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      background: var(--accent);
+      border: 2px solid var(--black);
+      padding: 16px 20px;
+      display: inline-block;
+      white-space: pre-wrap;
+    }
+
+    /* ─── POLICY TABLE ─── */
+
+    .policy-table-wrap {
+      border-bottom: 2px solid var(--black);
+    }
+
+    .policy-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .policy-table th,
+    .policy-table td {
+      text-align: left;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--divider);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    .policy-table th {
+      background: var(--accent);
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      font-weight: bold;
+      border-bottom: 2px solid var(--black);
+      position: sticky;
+      top: 0;
+    }
+
+    .policy-table tr:hover td {
+      background: var(--accent);
+    }
+
+    .policy-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .policy-name {
+      font-weight: 900;
+      font-size: 0.95rem;
+    }
+
+    .policy-server {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'Courier New', monospace;
+    }
+
+    .policy-tools {
+      font-weight: 900;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .policy-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--code-bg);
+      padding: 2px 8px;
+      font-weight: bold;
+      color: var(--muted);
+    }
+
+    .policy-link {
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* ─── FOOTER ─── */
+
+    footer {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    footer a {
+      color: var(--black);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      margin-left: 20px;
+    }
+
+    /* ─── RESPONSIVE ─── */
+
+    @media (max-width: 900px) {
+      body {
+        padding: 10px;
+      }
+
+      .hero {
+        padding: 40px 25px;
+      }
+
+      .hero h1 {
+        font-size: 2.5rem;
+        letter-spacing: -1.5px;
+      }
+
+      .menu-btn {
+        display: block;
+      }
+
+      header nav {
+        display: none;
+        width: 100%;
+        border-top: 2px solid var(--black);
+        margin-top: 20px;
+        padding-top: 15px;
+      }
+
+      header nav a {
+        display: block;
+        margin: 0;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--divider);
+        font-size: 0.8rem;
+      }
+
+      header nav a:last-child {
+        border-bottom: none;
+      }
+
+      header nav .nav-bordered {
+        border: none;
+        padding: 12px 0;
+      }
+
+      header {
+        flex-wrap: wrap;
+      }
+
+      .menu-toggle:checked ~ nav {
+        display: block;
+      }
+
+      .policy-table th:nth-child(3),
+      .policy-table td:nth-child(3) {
+        display: none;
+      }
+
+      .policy-table th,
+      .policy-table td {
+        padding: 12px 14px;
+        font-size: 0.8rem;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 0;
+        text-align: center;
+        padding: 25px;
+      }
+
+      footer > div:first-child {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--divider);
+      }
+
+      footer a {
+        margin: 0;
+        display: inline-block;
+        padding: 5px 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .policy-table th:nth-child(4),
+      .policy-table td:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── HEADER ─── -->
+
+  <header>
+    <a href="index.html" class="logo">INTERCEPT</a>
+    <input type="checkbox" id="menu-toggle" class="menu-toggle">
+    <label for="menu-toggle" class="menu-btn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <nav>
+      <a href="policies.html">Policies</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Docs</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">Usage</a>
+      <a href="https://github.com/policylayer/intercept">GitHub</a>
+      <a href="index.html#install" class="nav-bordered">Install</a>
+    </nav>
+  </header>
+
+  <!-- ─── HERO ─── -->
+
+  <div class="hero">
+    <h1>Policy<br>Library</h1>
+    <p>Ready-made policy scaffolds for popular MCP servers. Each file lists every tool grouped by category &mdash; Read, Write, Execute, Financial, Destructive. Copy one, add your rules, and enforce.</p>
+    <pre>cp policies/stripe.yaml policy.yaml
+# add your rules, then:
+intercept -c policy.yaml --upstream https://mcp.stripe.com</pre>
+  </div>
+
+  <!-- ─── POLICY TABLE ─── -->
+
+  <div class="policy-table-wrap">
+    <table class="policy-table">
+      <thead>
+        <tr>
+          <th>Server</th>
+          <th style="text-align: center;">Tools</th>
+          <th>Tags</th>
+          <th>Policy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="policy-name">Asana</div><div class="policy-server">roychri/mcp-server-asana</div></td>
+          <td class="policy-tools">15</td>
+          <td><div class="policy-tags"><span class="tag">project-management</span><span class="tag">tasks</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/asana.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Atlassian</div><div class="policy-server">atlassian/atlassian-mcp-server</div></td>
+          <td class="policy-tools">20</td>
+          <td><div class="policy-tags"><span class="tag">jira</span><span class="tag">confluence</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/atlassian.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">AWS</div><div class="policy-server">awslabs/mcp</div></td>
+          <td class="policy-tools">55</td>
+          <td><div class="policy-tags"><span class="tag">cloud</span><span class="tag">s3</span><span class="tag">lambda</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/aws.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Azure</div><div class="policy-server">Azure/azure-mcp</div></td>
+          <td class="policy-tools">49</td>
+          <td><div class="policy-tags"><span class="tag">cloud</span><span class="tag">infrastructure</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/azure.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Brave Search</div><div class="policy-server">brave/brave-search-mcp-server</div></td>
+          <td class="policy-tools">6</td>
+          <td><div class="policy-tags"><span class="tag">search</span><span class="tag">web</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/brave-search.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Chargebee</div><div class="policy-server">chargebee/agentkit</div></td>
+          <td class="policy-tools">2</td>
+          <td><div class="policy-tags"><span class="tag">billing</span><span class="tag">subscriptions</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/chargebee.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">CircleCI</div><div class="policy-server">CircleCI-Public/mcp-server-circleci</div></td>
+          <td class="policy-tools">15</td>
+          <td><div class="policy-tags"><span class="tag">ci-cd</span><span class="tag">pipelines</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/circleci.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">ClickHouse</div><div class="policy-server">ClickHouse/mcp-clickhouse</div></td>
+          <td class="policy-tools">4</td>
+          <td><div class="policy-tags"><span class="tag">analytics</span><span class="tag">database</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/clickhouse.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Cloudflare</div><div class="policy-server">cloudflare/mcp-server-cloudflare</div></td>
+          <td class="policy-tools">23</td>
+          <td><div class="policy-tags"><span class="tag">workers</span><span class="tag">kv</span><span class="tag">dns</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/cloudflare.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Datadog</div><div class="policy-server">winor30/mcp-server-datadog</div></td>
+          <td class="policy-tools">20</td>
+          <td><div class="policy-tags"><span class="tag">monitoring</span><span class="tag">observability</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/datadog.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Docker</div><div class="policy-server">ckreiling/mcp-server-docker</div></td>
+          <td class="policy-tools">19</td>
+          <td><div class="policy-tags"><span class="tag">containers</span><span class="tag">images</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/docker.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">ElevenLabs</div><div class="policy-server">elevenlabs/elevenlabs-mcp</div></td>
+          <td class="policy-tools">10</td>
+          <td><div class="policy-tags"><span class="tag">text-to-speech</span><span class="tag">voice</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/elevenlabs.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Exa</div><div class="policy-server">exa-labs/exa-mcp-server</div></td>
+          <td class="policy-tools">8</td>
+          <td><div class="policy-tags"><span class="tag">search</span><span class="tag">semantic</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/exa.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Figma</div><div class="policy-server">figma/figma-mcp-server</div></td>
+          <td class="policy-tools">7</td>
+          <td><div class="policy-tags"><span class="tag">design</span><span class="tag">ui</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/figma.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Filesystem</div><div class="policy-server">modelcontextprotocol/server-filesystem</div></td>
+          <td class="policy-tools">12</td>
+          <td><div class="policy-tags"><span class="tag">files</span><span class="tag">directories</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/filesystem.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Firecrawl</div><div class="policy-server">firecrawl/firecrawl-mcp-server</div></td>
+          <td class="policy-tools">7</td>
+          <td><div class="policy-tags"><span class="tag">web-scraping</span><span class="tag">crawling</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/firecrawl.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Git</div><div class="policy-server">modelcontextprotocol/server-git</div></td>
+          <td class="policy-tools">14</td>
+          <td><div class="policy-tags"><span class="tag">version-control</span><span class="tag">repositories</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/git.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">GitHub</div><div class="policy-server">github/github-mcp-server</div></td>
+          <td class="policy-tools">83</td>
+          <td><div class="policy-tags"><span class="tag">repositories</span><span class="tag">issues</span><span class="tag">PRs</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/github.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">GitLab</div><div class="policy-server">gitlab-org/gitlab-mcp-server</div></td>
+          <td class="policy-tools">15</td>
+          <td><div class="policy-tags"><span class="tag">repositories</span><span class="tag">ci-cd</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/gitlab.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Google Drive</div><div class="policy-server">modelcontextprotocol/server-gdrive</div></td>
+          <td class="policy-tools">1</td>
+          <td><div class="policy-tags"><span class="tag">files</span><span class="tag">cloud-storage</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/google-drive.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Grafana</div><div class="policy-server">grafana/mcp-grafana</div></td>
+          <td class="policy-tools">29</td>
+          <td><div class="policy-tags"><span class="tag">observability</span><span class="tag">dashboards</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/grafana.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Linear</div><div class="policy-server">linear-mcp-server</div></td>
+          <td class="policy-tools">23</td>
+          <td><div class="policy-tags"><span class="tag">project-management</span><span class="tag">issues</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/linear.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Memory</div><div class="policy-server">modelcontextprotocol/server-memory</div></td>
+          <td class="policy-tools">9</td>
+          <td><div class="policy-tags"><span class="tag">knowledge-graph</span><span class="tag">entities</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/memory.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Mixpanel</div><div class="policy-server">mixpanel-mcp-server</div></td>
+          <td class="policy-tools">18</td>
+          <td><div class="policy-tags"><span class="tag">analytics</span><span class="tag">events</span><span class="tag">funnels</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/mixpanel.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">MongoDB</div><div class="policy-server">mongodb-js/mongodb-mcp-server</div></td>
+          <td class="policy-tools">36</td>
+          <td><div class="policy-tags"><span class="tag">database</span><span class="tag">nosql</span><span class="tag">atlas</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/mongodb.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Neo4j</div><div class="policy-server">neo4j/mcp</div></td>
+          <td class="policy-tools">4</td>
+          <td><div class="policy-tags"><span class="tag">graph-database</span><span class="tag">cypher</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/neo4j.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Neon</div><div class="policy-server">neondatabase/mcp-server-neon</div></td>
+          <td class="policy-tools">29</td>
+          <td><div class="policy-tags"><span class="tag">postgres</span><span class="tag">serverless</span><span class="tag">branching</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/neon.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Notion</div><div class="policy-server">notion-mcp-server</div></td>
+          <td class="policy-tools">16</td>
+          <td><div class="policy-tags"><span class="tag">databases</span><span class="tag">pages</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/notion.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">PayPal</div><div class="policy-server">paypal/paypal-mcp-server</div></td>
+          <td class="policy-tools">30</td>
+          <td><div class="policy-tags"><span class="tag">payments</span><span class="tag">invoices</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/paypal.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Playwright</div><div class="policy-server">microsoft/playwright-mcp</div></td>
+          <td class="policy-tools">25</td>
+          <td><div class="policy-tags"><span class="tag">browser</span><span class="tag">testing</span><span class="tag">automation</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/playwright.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">PostgreSQL</div><div class="policy-server">modelcontextprotocol/server-postgres</div></td>
+          <td class="policy-tools">1</td>
+          <td><div class="policy-tags"><span class="tag">database</span><span class="tag">sql</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/postgres.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Postman</div><div class="policy-server">postmanlabs/postman-mcp-server</div></td>
+          <td class="policy-tools">30</td>
+          <td><div class="policy-tags"><span class="tag">api</span><span class="tag">testing</span><span class="tag">collections</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/postman.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Puppeteer</div><div class="policy-server">modelcontextprotocol/server-puppeteer</div></td>
+          <td class="policy-tools">7</td>
+          <td><div class="policy-tags"><span class="tag">browser</span><span class="tag">automation</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/puppeteer.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Qdrant</div><div class="policy-server">qdrant/mcp-server-qdrant</div></td>
+          <td class="policy-tools">2</td>
+          <td><div class="policy-tags"><span class="tag">vector-database</span><span class="tag">embeddings</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/qdrant.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Semgrep</div><div class="policy-server">semgrep/mcp</div></td>
+          <td class="policy-tools">8</td>
+          <td><div class="policy-tags"><span class="tag">security</span><span class="tag">code-analysis</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/semgrep.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Sentry</div><div class="policy-server">getsentry/sentry-mcp</div></td>
+          <td class="policy-tools">25</td>
+          <td><div class="policy-tags"><span class="tag">error-tracking</span><span class="tag">monitoring</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/sentry.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Shopify</div><div class="policy-server">Shopify/dev-mcp</div></td>
+          <td class="policy-tools">6</td>
+          <td><div class="policy-tags"><span class="tag">e-commerce</span><span class="tag">graphql</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/shopify.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Slack</div><div class="policy-server">modelcontextprotocol/server-slack</div></td>
+          <td class="policy-tools">8</td>
+          <td><div class="policy-tags"><span class="tag">messaging</span><span class="tag">channels</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/slack.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Square</div><div class="policy-server">square/square-mcp-server</div></td>
+          <td class="policy-tools">3</td>
+          <td><div class="policy-tags"><span class="tag">payments</span><span class="tag">commerce</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/square.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Stripe</div><div class="policy-server">stripe/agent-toolkit</div></td>
+          <td class="policy-tools">27</td>
+          <td><div class="policy-tags"><span class="tag">payments</span><span class="tag">billing</span><span class="tag">invoices</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/stripe.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Supabase</div><div class="policy-server">supabase-community/supabase-mcp</div></td>
+          <td class="policy-tools">32</td>
+          <td><div class="policy-tags"><span class="tag">postgres</span><span class="tag">edge-functions</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/supabase.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Tavily</div><div class="policy-server">tavily-ai/tavily-mcp</div></td>
+          <td class="policy-tools">4</td>
+          <td><div class="policy-tags"><span class="tag">search</span><span class="tag">extraction</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/tavily.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+        <tr>
+          <td><div class="policy-name">Twilio</div><div class="policy-server">twilio-labs/mcp</div></td>
+          <td class="policy-tools">36</td>
+          <td><div class="policy-tags"><span class="tag">sms</span><span class="tag">voice</span><span class="tag">messaging</span></div></td>
+          <td><a href="https://github.com/policylayer/intercept/blob/main/policies/twilio.yaml" class="policy-link">View YAML</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ─── FOOTER ─── -->
+
+  <footer>
+    <div>Apache 2.0 Licence &middot; Built by <a href="https://policylayer.com" style="margin-left: 0;">PolicyLayer</a></div>
+    <div>
+      <a href="index.html">Home</a>
+      <a href="https://github.com/policylayer/intercept">GitHub</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/POLICY.md">Policy Docs</a>
+      <a href="https://github.com/policylayer/intercept/blob/main/USAGE.md">CLI Reference</a>
+      <a href="https://x.com/policylayer">@PolicyLayer</a>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
