@@ -117,6 +117,20 @@ intercept -c policy.yaml --upstream https://mcp.stripe.com --header "Authorizati
 
 Intercept proxies all MCP traffic and enforces your policy on every tool call. Hidden tools are stripped from the agent's view entirely.
 
+## Example policies
+
+The `policies/` directory contains ready-made policy scaffolds for 43 popular MCP servers including GitHub, Stripe, AWS, Notion, Slack, and more. Each file lists every tool with its description, grouped by category (Read, Write, Execute, Financial, Destructive).
+
+Copy one as a starting point:
+
+```sh
+cp policies/stripe.yaml policy.yaml
+# edit to add your rules, then:
+intercept -c policy.yaml --upstream https://mcp.stripe.com
+```
+
+Browse all policies → [policies/](policies/)
+
 ## MCP client integration
 
 To use Intercept with Claude Code (or any MCP client that reads `.mcp.json`), point the server command at Intercept:
@@ -168,6 +182,7 @@ intercept -c policy.yaml --state-dsn redis://localhost:6379 --upstream https://m
 
 - [CLI reference](USAGE.md): all commands, flags, transport modes, state backends, event logging
 - [Policy reference](POLICY.md): YAML format, conditions, operators, stateful counters, examples
+- [Example policies](policies/): ready-made scaffolds for 43 MCP servers
 
 ## License
 
